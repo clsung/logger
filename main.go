@@ -1,4 +1,4 @@
-package log
+package logger
 
 import (
 	"time"
@@ -41,12 +41,12 @@ type Payload struct {
 	Stacktrace     string             `json:"stacktrace,omitempty"`
 }
 
-type Logger struct {
+type Log struct {
 	Payload *Payload
 }
 
-func New(service, version string) *Logger {
-	return &Logger{
+func New(service, version string) *Log {
+	return &Log{
 		Payload: &Payload{
 			ServiceContext: &ServiceContext{
 				Service: service,
@@ -56,7 +56,7 @@ func New(service, version string) *Logger {
 	}
 }
 
-func (l *Logger) Set(key, val string) {
+func (l *Log) Set(key, val string) {
 	if l.Payload.Data == nil {
 		l.Payload.Data = map[string]string{}
 	}
@@ -64,7 +64,7 @@ func (l *Logger) Set(key, val string) {
 	l.Payload.Data[key] = val
 }
 
-func (l *Logger) log(severity, message string) {
+func (l *Log) log(severity, message string) {
 	l.Payload = &Payload{
 		Severity: severity,
 		EventTime: time.Now().Format(time.RFC3339),
@@ -86,19 +86,19 @@ func (l *Logger) log(severity, message string) {
 	l.Payload.Data = nil
 }
 
-func (l *Logger) Debug(message string) {
+func (l *Log) Debug(message string) {
 	l.log(SEVERITY_DEBUG, message)
 }
 
-func (l *Logger) Info(message string) {
+func (l *Log) Info(message string) {
 	l.log(SEVERITY_INFO, message)
 }
 
-func (l *Logger) Warn(message string) {
+func (l *Log) Warn(message string) {
 	l.log(SEVERITY_WARN, message)
 }
 
-func (l *Logger) Error(message string) {
+func (l *Log) Error(message string) {
 	buffer := make([]byte, 1024)
 	runtime.Stack(buffer, false)
 	_, file, line, _ := runtime.Caller(1)

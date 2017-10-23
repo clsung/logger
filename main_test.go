@@ -1,23 +1,23 @@
-package log
+package logger
 
 import (
 	"testing"
 )
 
 func TestLoggerDebug(t *testing.T) {
-	logger := New("robokiller-ivr", "1.0")
-	logger.Set("foo", "bar")
-	logger.Debug("debug message")
+	log := New("robokiller-ivr", "1.0")
+	log.Set("foo", "bar")
+	log.Debug("debug message")
 }
 
 func TestLoggerInfo(t *testing.T) {
-	logger := New("robokiller-ivr", "1.0")
-	logger.Set("foo", "bar")
-	logger.Info("info message")
+	log := New("robokiller-ivr", "1.0")
+	log.Set("foo", "bar")
+	log.Info("info message")
 }
 
 func TestLoggerError(t *testing.T) {
-	logger := New("robokiller-ivr", "1.0")
-	logger.Set("foo", "bar")
-	logger.Error("error message")
+	log := New("robokiller-ivr", "1.0")
+	log.Set("foo", "bar")
+	log.Error("error message")
 }
