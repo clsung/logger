@@ -6,14 +6,31 @@ import (
 	"encoding/json"
 	"runtime"
 	"bytes"
+	"os"
+	"io"
 )
 
+
 const (
-	SEVERITY_DEBUG = "DEBUG"
-	SEVERITY_INFO  = "INFO"
-	SEVERITY_WARN  = "WARN"
-	SEVERITY_ERROR = "ERROR"
+	LOG_LEVEL_DEBUG = 0
+	LOG_LEVEL_INFO  = 1
+	LOG_LEVEL_WARN  = 2
+	LOG_LEVEL_ERROR = 3
 )
+
+var LogLevelName = map[int]string{
+	0: "DEBUG",
+	1: "INFO",
+	2: "WARN",
+	3: "ERROR",
+}
+
+var LogLevelValue = map[string]int{
+	"DEBUG": 0,
+	"INFO": 1,
+	"WARN": 2,
+	"ERROR": 3,
+}
 
 type ServiceContext struct {
 	Service string `json:"service"`
@@ -43,6 +60,7 @@ type Payload struct {
 
 type Log struct {
 	Payload *Payload
+	writer io.Writer
 }
 
 func New(service, version string) *Log {
@@ -53,7 +71,12 @@ func New(service, version string) *Log {
 				Version: version,
 			},
 		},
+		writer: os.Stdout,
 	}
+}
+
+func (l *Log) SetWriter(w io.Writer) {
+	l.writer = w
 }
 
 func (l *Log) Set(key, val string) {
@@ -80,22 +103,44 @@ func (l *Log) log(severity, message string) {
 		fmt.Errorf("cannot marshal payload: %s", ok.Error())
 	}
 
-	fmt.Println(string(line))
+	fmt.Fprintln(l.writer, string(line))
 
 	// Unset the current payload data
 	l.Payload.Data = nil
 }
 
+// Checks whether the specified log level is valid in the current environment
+func isValidLogLevel(logLevel int) bool {
+	curLogLev, ok := LogLevelValue[os.Getenv("LOG_LEVEL")]
+	if !ok {
+		fmt.Errorf("the LOG_LEVEL environment variable is not set or has an incorrect value")
+	}
+
+	return curLogLev <= logLevel
+}
+
 func (l *Log) Debug(message string) {
-	l.log(SEVERITY_DEBUG, message)
+	if !isValidLogLevel(LOG_LEVEL_DEBUG) {
+		return
+	}
+
+	l.log(LogLevelName[LOG_LEVEL_DEBUG], message)
 }
 
 func (l *Log) Info(message string) {
-	l.log(SEVERITY_INFO, message)
+	if !isValidLogLevel(LOG_LEVEL_INFO) {
+		return
+	}
+
+	l.log(LogLevelName[LOG_LEVEL_INFO], message)
 }
 
 func (l *Log) Warn(message string) {
-	l.log(SEVERITY_WARN, message)
+	if !isValidLogLevel(LOG_LEVEL_WARN) {
+		return
+	}
+
+	l.log(LogLevelName[LOG_LEVEL_WARN], message)
 }
 
 func (l *Log) Error(message string) {
@@ -114,5 +159,5 @@ func (l *Log) Error(message string) {
 		Stacktrace: string(bytes.Trim(buffer, "\x00")),
 	}
 
-	l.log(SEVERITY_ERROR, message)
+	l.log(LogLevelName[LOG_LEVEL_ERROR], message)
 }
