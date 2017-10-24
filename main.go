@@ -27,10 +27,12 @@ var LogLevelName = map[int]string{
 
 var LogLevelValue = map[string]int{
 	"DEBUG": 0,
-	"INFO": 1,
-	"WARN": 2,
+	"INFO":  1,
+	"WARN":  2,
 	"ERROR": 3,
 }
+
+type Fields map[string]string
 
 type ServiceContext struct {
 	Service string `json:"service"`
@@ -44,18 +46,19 @@ type ReportLocation struct {
 }
 
 type Context struct {
+	Data           Fields          `json:"data,omitempty"`
 	ReportLocation *ReportLocation `json:"reportLocation,omitempty"`
 }
 
 type Payload struct {
-	Severity       string             `json:"severity"`
-	EventTime      string             `json:"eventTime"`
-	Caller         string             `json:"caller,omitempty"`
-	Message        string             `json:"message"`
-	Data           map[string]string  `json:"data,omitempty"`
-	ServiceContext *ServiceContext    `json:"serviceContext"`
-	Context        *Context           `json:"context,omitempty"`
-	Stacktrace     string             `json:"stacktrace,omitempty"`
+	Severity       string          `json:"severity"`
+	EventTime      string          `json:"eventTime"`
+	Caller         string          `json:"caller,omitempty"`
+	Message        string          `json:"message"`
+	Data           Fields          `json:"data,omitempty"`
+	ServiceContext *ServiceContext `json:"serviceContext"`
+	Context        *Context        `json:"context,omitempty"`
+	Stacktrace     string          `json:"stacktrace,omitempty"`
 }
 
 type Log struct {
@@ -80,30 +83,32 @@ func (l *Log) SetWriter(w io.Writer) {
 }
 
 func (l *Log) Set(key, val string) {
-	if l.Payload.Data == nil {
-		l.Payload.Data = map[string]string{}
+	if l.Payload.Context == nil {
+		l.Payload.Context = &Context{
+			Data: Fields{},
+		}
 	}
 
-	l.Payload.Data[key] = val
+	l.Payload.Context.Data[key] = val
 }
 
-func (l *Log) log(severity, message string) {
+func (l *Log) log(severity, message string, data Fields) {
 	l.Payload = &Payload{
 		Severity: severity,
 		EventTime: time.Now().Format(time.RFC3339),
 		Message: message,
-		Data: l.Payload.Data,
+		Data: data,
 		ServiceContext: l.Payload.ServiceContext,
 		Context: l.Payload.Context,
 		Stacktrace: l.Payload.Stacktrace,
 	}
 
-	line, ok := json.Marshal(l.Payload)
+	payload, ok := json.Marshal(l.Payload)
 	if ok != nil {
 		fmt.Errorf("cannot marshal payload: %s", ok.Error())
 	}
 
-	fmt.Fprintln(l.writer, string(line))
+	fmt.Fprintln(l.writer, string(payload))
 
 	// Unset the current payload data
 	l.Payload.Data = nil
@@ -119,37 +124,47 @@ func isValidLogLevel(logLevel int) bool {
 	return curLogLev <= logLevel
 }
 
-func (l *Log) Debug(message string) {
+func (l *Log) Debug(message string, data Fields) {
 	if !isValidLogLevel(LOG_LEVEL_DEBUG) {
 		return
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_DEBUG], message)
+	l.log(LogLevelName[LOG_LEVEL_DEBUG], message, data)
 }
 
-func (l *Log) Info(message string) {
+func (l *Log) Metric(message string) {
 	if !isValidLogLevel(LOG_LEVEL_INFO) {
 		return
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_INFO], message)
+	l.log(LogLevelName[LOG_LEVEL_INFO], message, Fields{})
 }
 
-func (l *Log) Warn(message string) {
+func (l *Log) Info(message string, data Fields) {
+	if !isValidLogLevel(LOG_LEVEL_INFO) {
+		return
+	}
+
+	l.log(LogLevelName[LOG_LEVEL_INFO], message, data)
+}
+
+func (l *Log) Warn(message string, data Fields) {
 	if !isValidLogLevel(LOG_LEVEL_WARN) {
 		return
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_WARN], message)
+	l.log(LogLevelName[LOG_LEVEL_WARN], message, data)
 }
 
-func (l *Log) Error(message string) {
+func (l *Log) Error(message string, data Fields) {
 	buffer := make([]byte, 1024)
 	runtime.Stack(buffer, false)
 	_, file, line, _ := runtime.Caller(1)
+
 	l.Payload = &Payload{
 		ServiceContext: l.Payload.ServiceContext,
 		Context: &Context{
+			Data: l.Payload.Context.Data,
 			ReportLocation: &ReportLocation{
 				FilePath: file,
 				FunctionName: "unknown",
@@ -159,5 +174,5 @@ func (l *Log) Error(message string) {
 		Stacktrace: string(bytes.Trim(buffer, "\x00")),
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_ERROR], message)
+	l.log(LogLevelName[LOG_LEVEL_ERROR], message, data)
 }

@@ -28,19 +28,20 @@ func main() {
     // A metric is an INFO log entry without a payload
     log.Metric("CUSTOM_METRIC_ENTRY")
 
+    // Add context values to all subsequent log entries using Set(), the values will persisted for the scope of the logger instance
     log.Set("user", "+1234567890")
     log.Set("action", "create-account")
 
     // Log a DEBUG message, only visible in when LOG_LEVEL is set to DEBUG
-    log.Debug("debug message goes here")
+    log.Debug("debug message goes here", log.Fields{"key":"val"})
 
     // Log an INFO message
-    log.Info("info message goes here")
+    log.Info("info message goes here", log.Fields{"key":"val"})
 
     // Log a WARN message
-    log.Warn("warn message goes here")
+    log.Warn("warn message goes here", log.Fields{"key":"val"})
 
     // Error() prints the stacktrace as part of the payload for each entry and sends the
     // data to Stackdriver Error Reporting service
-    log.Error("error message goes here")
+    log.Error("error message goes here", log.Fields{"key":"val"})
 }
