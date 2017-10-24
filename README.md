@@ -20,9 +20,12 @@ import (
 // If no value is set, the default LOG_LEVEL will be INFO
 
 func main() {
-    log, err := log.New("project-name", "project-version")
+    // Stackdriver requires a project name and version to be set. Use your environment for these values.
+    // LOGGER_SERVICE should be your GCP project-id, e.g. robokiller-146813
+    // LOGGER_VERSION is an arbitrary value
+    log, err := log.New()
     if err != nil {
-        fmt.Print("Cannot initiate logger")
+        fmt.Errorf("cannot initiate logger")
     }
 
     // A metric is an INFO log entry without a payload

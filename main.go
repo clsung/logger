@@ -67,12 +67,16 @@ type Log struct {
 	writer io.Writer
 }
 
-func New(service, version string) *Log {
+func New() *Log {
+	if os.Getenv("LOGGER_SERVICE") == "" || os.Getenv("LOGGER_VERSION") == "" {
+		fmt.Errorf("cannot instantiate the logger, make sure the LOGGER_SERVICE and LOGGER_VERSION environment vars are set correctly")
+	}
+
 	return &Log{
 		Payload: &Payload{
 			ServiceContext: &ServiceContext{
-				Service: service,
-				Version: version,
+				Service: os.Getenv("LOGGER_SERVICE"),
+				Version: os.Getenv("LOGGER_VERSION"),
 			},
 		},
 		writer: os.Stdout,

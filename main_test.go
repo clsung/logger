@@ -13,6 +13,11 @@ type LogFunc func(message string)
 
 const OUTFILE = "out.json"
 
+func setEnv() {
+	os.Setenv("LOGGER_SERVICE", "robokiller-ivr")
+	os.Setenv("LOGGER_VERSION", "1.0")
+}
+
 func createOutFile() *os.File {
 	// Delete file first if exists
 	os.Remove(OUTFILE)
@@ -48,7 +53,8 @@ func TestLoggerDebug(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	log := New("robokiller-ivr", "1.0")
+	setEnv()
+	log := New()
 	log.SetWriter(file)
 
 	log.Set("key", "value")
@@ -63,7 +69,8 @@ func TestLoggerMetric(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	log := New("robokiller-ivr", "1.0")
+	setEnv()
+	log := New()
 	log.SetWriter(file)
 
 	log.Metric("custom_metric")
@@ -77,7 +84,8 @@ func TestLoggerInfo(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	log := New("robokiller-ivr", "1.0")
+	setEnv()
+	log := New()
 	log.SetWriter(file)
 
 	log.Set("key", "value")
@@ -92,7 +100,8 @@ func TestLoggerError(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	log := New("robokiller-ivr", "1.0")
+	setEnv()
+	log := New()
 	log.SetWriter(file)
 
 	log.Set("key", "value")
@@ -122,7 +131,8 @@ func TestLoggerInfoWithSeveralPayloadEntries(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	log := New("robokiller-ivr", "1.0")
+	setEnv()
+	log := New()
 	log.SetWriter(file)
 
 	log.Set("key", "value")
@@ -137,7 +147,8 @@ func TestLoggerErrorWithSeveralPayloadEntries(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	log := New("robokiller-ivr", "1.0")
+	setEnv()
+	log := New()
 	log.SetWriter(file)
 
 	log.Set("key", "value")
@@ -167,7 +178,8 @@ func TestLoggerInfoWithSeveralContextEntries(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	log := New("robokiller-ivr", "1.0")
+	setEnv()
+	log := New()
 	log.SetWriter(file)
 
 	log.Set("key", "value")
@@ -183,7 +195,8 @@ func TestLoggerErrorWithSeveralContextEntries(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	log := New("robokiller-ivr", "1.0")
+	setEnv()
+	log := New()
 	log.SetWriter(file)
 
 	log.Set("key", "value")
