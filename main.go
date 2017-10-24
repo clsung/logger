@@ -10,26 +10,27 @@ import (
 	"io"
 )
 
+type severity int
 
 const (
-	LOG_LEVEL_DEBUG = 0
-	LOG_LEVEL_INFO  = 1
-	LOG_LEVEL_WARN  = 2
-	LOG_LEVEL_ERROR = 3
+	DEBUG severity = iota
+	INFO
+	WARN
+	ERROR
 )
 
-var LogLevelName = map[int]string{
-	0: "DEBUG",
-	1: "INFO",
-	2: "WARN",
-	3: "ERROR",
+var LogLevelName = [...]string{
+	"DEBUG",
+	"INFO",
+	"WARN",
+	"ERROR",
 }
 
-var LogLevelValue = map[string]int{
-	"DEBUG": 0,
-	"INFO":  1,
-	"WARN":  2,
-	"ERROR": 3,
+var LogLevelValue = map[string]severity{
+	"DEBUG": DEBUG,
+	"INFO":  INFO,
+	"WARN":  WARN,
+	"ERROR": ERROR,
 }
 
 type Fields map[string]string
@@ -115,7 +116,7 @@ func (l *Log) log(severity, message string, data Fields) {
 }
 
 // Checks whether the specified log level is valid in the current environment
-func isValidLogLevel(logLevel int) bool {
+func isValidLogLevel(logLevel severity) bool {
 	curLogLev, ok := LogLevelValue[os.Getenv("LOG_LEVEL")]
 	if !ok {
 		fmt.Errorf("the LOG_LEVEL environment variable is not set or has an incorrect value")
@@ -125,35 +126,35 @@ func isValidLogLevel(logLevel int) bool {
 }
 
 func (l *Log) Debug(message string, data Fields) {
-	if !isValidLogLevel(LOG_LEVEL_DEBUG) {
+	if !isValidLogLevel(DEBUG) {
 		return
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_DEBUG], message, data)
+	l.log(LogLevelName[DEBUG], message, data)
 }
 
 func (l *Log) Metric(message string) {
-	if !isValidLogLevel(LOG_LEVEL_INFO) {
+	if !isValidLogLevel(INFO) {
 		return
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_INFO], message, Fields{})
+	l.log(LogLevelName[INFO], message, Fields{})
 }
 
 func (l *Log) Info(message string, data Fields) {
-	if !isValidLogLevel(LOG_LEVEL_INFO) {
+	if !isValidLogLevel(INFO) {
 		return
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_INFO], message, data)
+	l.log(LogLevelName[INFO], message, data)
 }
 
 func (l *Log) Warn(message string, data Fields) {
-	if !isValidLogLevel(LOG_LEVEL_WARN) {
+	if !isValidLogLevel(WARN) {
 		return
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_WARN], message, data)
+	l.log(LogLevelName[WARN], message, data)
 }
 
 func (l *Log) Error(message string, data Fields) {
@@ -174,5 +175,5 @@ func (l *Log) Error(message string, data Fields) {
 		Stacktrace: string(bytes.Trim(buffer, "\x00")),
 	}
 
-	l.log(LogLevelName[LOG_LEVEL_ERROR], message, data)
+	l.log(LogLevelName[ERROR], message, data)
 }
