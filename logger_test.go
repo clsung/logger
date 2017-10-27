@@ -9,8 +9,6 @@ import (
 	"strings"
 )
 
-type LogFunc func(message string)
-
 const OUTFILE = "out.json"
 
 func setEnv() {
@@ -54,12 +52,56 @@ func TestLoggerDebug(t *testing.T) {
 	defer file.Close()
 
 	setEnv()
+	log := New().WithContext(Fields{"key": "value"})
+	log.SetWriter(file)
+
+	log.With(Fields{"function": "TestLoggerDebug"}).Debug("debug message")
+	expected := fmt.Sprintf("{\"severity\":\"DEBUG\",\"eventTime\":\"%s\",\"message\":\"debug message\",\"data\":{\"function\":\"TestLoggerDebug\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
+	}
+}
+
+func TestLoggerDebugWithoutContext(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	setEnv()
 	log := New()
 	log.SetWriter(file)
 
-	log.Set("key", "value")
-	log.Debug("debug message", Fields{"function": "TestLoggerDebug"})
-	expected := fmt.Sprintf("{\"severity\":\"DEBUG\",\"eventTime\":\"%s\",\"message\":\"debug message\",\"data\":{\"function\":\"TestLoggerDebug\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
+	log.With(Fields{"function": "TestLoggerDebug"}).Debug("debug message")
+	expected := fmt.Sprintf("{\"severity\":\"DEBUG\",\"eventTime\":\"%s\",\"message\":\"debug message\",\"data\":{\"function\":\"TestLoggerDebug\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
+	}
+}
+
+func TestLoggerDebugWithoutFields(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	setEnv()
+	log := New()
+	log.SetWriter(file)
+
+	log.Debug("debug message")
+	expected := fmt.Sprintf("{\"severity\":\"DEBUG\",\"eventTime\":\"%s\",\"message\":\"debug message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
+	}
+}
+
+func TestLoggerDebugAppending(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	setEnv()
+	log := New()
+	log.SetWriter(file)
+
+	log.Debug("debug message")
+	expected := fmt.Sprintf("{\"severity\":\"DEBUG\",\"eventTime\":\"%s\",\"message\":\"debug message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}}", time.Now().Format(time.RFC3339))
 	if !compareWithOutFile(expected) {
 		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
 	}
@@ -85,11 +127,10 @@ func TestLoggerInfo(t *testing.T) {
 	defer file.Close()
 
 	setEnv()
-	log := New()
+	log := New().WithContext(Fields{"key":"value"})
 	log.SetWriter(file)
 
-	log.Set("key", "value")
-	log.Info("info message", Fields{"function": "TestLoggerInfo"})
+	log.With(Fields{"function": "TestLoggerInfo"}).Info("info message")
 	expected := fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"info message\",\"data\":{\"function\":\"TestLoggerInfo\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
 	if !compareWithOutFile(expected) {
 		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
@@ -101,11 +142,10 @@ func TestLoggerError(t *testing.T) {
 	defer file.Close()
 
 	setEnv()
-	log := New()
+	log := New().WithContext(Fields{"key":"value"})
 	log.SetWriter(file)
 
-	log.Set("key", "value")
-	log.Error("error message", Fields{"function": "TestLoggerError"})
+	log.With(Fields{"function": "TestLoggerError"}).Error("error message")
 	expected := fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"error message\",\"data\":{\"function\":\"TestLoggerError\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}", time.Now().Format(time.RFC3339))
 	if !outFileContains(expected) {
 		t.Errorf("output file %s does not containsubstring %s", OUTFILE, expected)
@@ -132,11 +172,10 @@ func TestLoggerInfoWithSeveralPayloadEntries(t *testing.T) {
 	defer file.Close()
 
 	setEnv()
-	log := New()
+	log := New().WithContext(Fields{"key":"value"})
 	log.SetWriter(file)
 
-	log.Set("key", "value")
-	log.Info("info message", Fields{"function": "TestLoggerInfo", "package": "logger"})
+	log.With(Fields{"function": "TestLoggerInfo", "package": "logger"}).Info("info message")
 	expected := fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"info message\",\"data\":{\"function\":\"TestLoggerInfo\",\"package\":\"logger\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
 	if !compareWithOutFile(expected) {
 		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
@@ -148,11 +187,10 @@ func TestLoggerErrorWithSeveralPayloadEntries(t *testing.T) {
 	defer file.Close()
 
 	setEnv()
-	log := New()
+	log := New().WithContext(Fields{"key":"value"})
 	log.SetWriter(file)
 
-	log.Set("key", "value")
-	log.Error("error message", Fields{"function": "TestLoggerError", "package": "logger"})
+	log.With(Fields{"function": "TestLoggerError", "package": "logger"}).Error("error message")
 	expected := fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"error message\",\"data\":{\"function\":\"TestLoggerError\",\"package\":\"logger\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}", time.Now().Format(time.RFC3339))
 	if !outFileContains(expected) {
 		t.Errorf("output file %s does not containsubstring %s", OUTFILE, expected)
@@ -179,12 +217,13 @@ func TestLoggerInfoWithSeveralContextEntries(t *testing.T) {
 	defer file.Close()
 
 	setEnv()
-	log := New()
+	log := New().WithContext(Fields{
+		"key": "value",
+		"extraKey": "extraValue",
+	})
 	log.SetWriter(file)
 
-	log.Set("key", "value")
-	log.Set("extraKey", "extraValue")
-	log.Info("info message", Fields{"function": "TestLoggerInfo", "package": "logger"})
+	log.With(Fields{"function": "TestLoggerInfo", "package": "logger"}).Info("info message")
 	expected := fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"info message\",\"data\":{\"function\":\"TestLoggerInfo\",\"package\":\"logger\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"extraKey\":\"extraValue\",\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
 	if !compareWithOutFile(expected) {
 		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
@@ -196,12 +235,13 @@ func TestLoggerErrorWithSeveralContextEntries(t *testing.T) {
 	defer file.Close()
 
 	setEnv()
-	log := New()
+	log := New().WithContext(Fields{
+		"key": "value",
+		"extraKey": "extraValue",
+	})
 	log.SetWriter(file)
 
-	log.Set("key", "value")
-	log.Set("extraKey", "extraValue")
-	log.Error("error message", Fields{"function": "TestLoggerError", "package": "logger"})
+	log.With(Fields{"function": "TestLoggerError", "package": "logger"}).Error("error message")
 	expected := fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"error message\",\"data\":{\"function\":\"TestLoggerError\",\"package\":\"logger\"},\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}", time.Now().Format(time.RFC3339))
 	if !outFileContains(expected) {
 		t.Errorf("output file %s does not containsubstring %s", OUTFILE, expected)

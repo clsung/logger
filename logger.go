@@ -33,6 +33,8 @@ var LogLevelValue = map[string]severity{
 	"ERROR": ERROR,
 }
 
+var data Fields
+
 type Fields map[string]string
 
 type ServiceContext struct {
@@ -87,7 +89,7 @@ func (l *Log) SetWriter(w io.Writer) {
 	l.writer = w
 }
 
-func (l *Log) Set(key, val string) {
+func (l *Log) set(key, val string) {
 	if l.Payload.Context == nil {
 		l.Payload.Context = &Context{
 			Data: Fields{},
@@ -97,7 +99,7 @@ func (l *Log) Set(key, val string) {
 	l.Payload.Context.Data[key] = val
 }
 
-func (l *Log) log(severity, message string, data Fields) {
+func (l *Log) log(severity, message string) {
 	l.Payload = &Payload{
 		Severity: severity,
 		EventTime: time.Now().Format(time.RFC3339),
@@ -116,7 +118,7 @@ func (l *Log) log(severity, message string, data Fields) {
 	fmt.Fprintln(l.writer, string(payload))
 
 	// Unset the current payload data
-	l.Payload.Data = nil
+	data = nil
 }
 
 // Checks whether the specified log level is valid in the current environment
@@ -129,12 +131,25 @@ func isValidLogLevel(logLevel severity) bool {
 	return curLogLev <= logLevel
 }
 
-func (l *Log) Debug(message string, data Fields) {
+func (l *Log) WithContext(fields Fields) *Log {
+	for k, v := range fields {
+		l.set(k, v)
+	}
+
+	return l
+}
+
+func (l *Log) With(fields Fields) *Log {
+	data = fields
+	return l
+}
+
+func (l *Log) Debug(message string) {
 	if !isValidLogLevel(DEBUG) {
 		return
 	}
 
-	l.log(LogLevelName[DEBUG], message, data)
+	l.log(LogLevelName[DEBUG], message)
 }
 
 func (l *Log) Metric(message string) {
@@ -142,26 +157,26 @@ func (l *Log) Metric(message string) {
 		return
 	}
 
-	l.log(LogLevelName[INFO], message, Fields{})
+	l.log(LogLevelName[INFO], message)
 }
 
-func (l *Log) Info(message string, data Fields) {
+func (l *Log) Info(message string) {
 	if !isValidLogLevel(INFO) {
 		return
 	}
 
-	l.log(LogLevelName[INFO], message, data)
+	l.log(LogLevelName[INFO], message)
 }
 
-func (l *Log) Warn(message string, data Fields) {
+func (l *Log) Warn(message string) {
 	if !isValidLogLevel(WARN) {
 		return
 	}
 
-	l.log(LogLevelName[WARN], message, data)
+	l.log(LogLevelName[WARN], message)
 }
 
-func (l *Log) Error(message string, data Fields) {
+func (l *Log) Error(message string) {
 	buffer := make([]byte, 1024)
 	runtime.Stack(buffer, false)
 	_, file, line, _ := runtime.Caller(1)
@@ -179,5 +194,5 @@ func (l *Log) Error(message string, data Fields) {
 		Stacktrace: string(bytes.Trim(buffer, "\x00")),
 	}
 
-	l.log(LogLevelName[ERROR], message, data)
+	l.log(LogLevelName[ERROR], message)
 }
