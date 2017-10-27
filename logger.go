@@ -33,8 +33,6 @@ var LogLevelValue = map[string]severity{
 	"ERROR": ERROR,
 }
 
-var data Fields
-
 type Fields map[string]string
 
 type ServiceContext struct {
@@ -58,7 +56,6 @@ type Payload struct {
 	EventTime      string          `json:"eventTime"`
 	Caller         string          `json:"caller,omitempty"`
 	Message        string          `json:"message"`
-	Data           Fields          `json:"data,omitempty"`
 	ServiceContext *ServiceContext `json:"serviceContext"`
 	Context        *Context        `json:"context,omitempty"`
 	Stacktrace     string          `json:"stacktrace,omitempty"`
@@ -85,8 +82,9 @@ func New() *Log {
 	}
 }
 
-func (l *Log) SetWriter(w io.Writer) {
+func (l *Log) SetWriter(w io.Writer) *Log {
 	l.writer = w
+	return l
 }
 
 func (l *Log) set(key, val string) {
@@ -104,7 +102,6 @@ func (l *Log) log(severity, message string) {
 		Severity: severity,
 		EventTime: time.Now().Format(time.RFC3339),
 		Message: message,
-		Data: data,
 		ServiceContext: l.Payload.ServiceContext,
 		Context: l.Payload.Context,
 		Stacktrace: l.Payload.Stacktrace,
@@ -116,9 +113,6 @@ func (l *Log) log(severity, message string) {
 	}
 
 	fmt.Fprintln(l.writer, string(payload))
-
-	// Unset the current payload data
-	data = nil
 }
 
 // Checks whether the specified log level is valid in the current environment
@@ -131,17 +125,26 @@ func isValidLogLevel(logLevel severity) bool {
 	return curLogLev <= logLevel
 }
 
-func (l *Log) WithContext(fields Fields) *Log {
-	for k, v := range fields {
-		l.set(k, v)
+func (l *Log) With(fields Fields) *Log {
+	if os.Getenv("SERVICE") == "" || os.Getenv("VERSION") == "" {
+		fmt.Errorf("cannot instantiate the logger, make sure the SERVICE and VERSION environment vars are set correctly")
 	}
 
-	return l
-}
+	log := &Log{
+		Payload: &Payload{
+			ServiceContext: &ServiceContext{
+				Service: os.Getenv("SERVICE"),
+				Version: os.Getenv("VERSION"),
+			},
+		},
+		writer: os.Stdout,
+	}
 
-func (l *Log) With(fields Fields) *Log {
-	data = fields
-	return l
+	for k, v := range fields {
+		log.set(k, v)
+	}
+
+	return log
 }
 
 func (l *Log) Debug(message string) {
