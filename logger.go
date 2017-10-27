@@ -126,25 +126,11 @@ func isValidLogLevel(logLevel severity) bool {
 }
 
 func (l *Log) With(fields Fields) *Log {
-	if os.Getenv("SERVICE") == "" || os.Getenv("VERSION") == "" {
-		fmt.Errorf("cannot instantiate the logger, make sure the SERVICE and VERSION environment vars are set correctly")
-	}
-
-	log := &Log{
-		Payload: &Payload{
-			ServiceContext: &ServiceContext{
-				Service: os.Getenv("SERVICE"),
-				Version: os.Getenv("VERSION"),
-			},
-		},
-		writer: os.Stdout,
-	}
-
 	for k, v := range fields {
-		log.set(k, v)
+		l.set(k, v)
 	}
 
-	return log
+	return l
 }
 
 func (l *Log) Debug(message string) {
