@@ -82,7 +82,6 @@ func TestLoggerDebugWithExplicitContext(t *testing.T) {
 	}
 }
 
-
 func TestLoggerDebugWithoutContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
@@ -92,6 +91,21 @@ func TestLoggerDebugWithoutContext(t *testing.T) {
 
 	log.Debug("debug message")
 	expected := fmt.Sprintf("{\"severity\":\"DEBUG\",\"eventTime\":\"%s\",\"message\":\"debug message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
+	}
+}
+
+func TestLoggerDebugfWithoutContext(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	setEnv()
+	log := New().SetWriter(file)
+
+	param := "with param"
+	log.Debugf("debug message %s", param)
+	expected := fmt.Sprintf("{\"severity\":\"DEBUG\",\"eventTime\":\"%s\",\"message\":\"debug message with param\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}}", time.Now().Format(time.RFC3339))
 	if !compareWithOutFile(expected) {
 		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
 	}
@@ -128,6 +142,24 @@ func TestLoggerInfo(t *testing.T) {
 	}
 }
 
+func TestLoggerInfof(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	setEnv()
+	log := New().With(Fields{
+		"key":"value",
+		"function": "TestLoggerInfo",
+	}).SetWriter(file)
+
+	param := "with param"
+	log.Infof("info message %s", param)
+	expected := fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"info message with param\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerInfo\",\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", OUTFILE, expected)
+	}
+}
+
 func TestLoggerError(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
@@ -152,6 +184,24 @@ func TestLoggerError(t *testing.T) {
 	// Check that the error entry has an stacktrace key
 	if !outFileContains("stacktrace") {
 		t.Errorf("output file %s does not contain a stacktrace key", OUTFILE)
+	}
+}
+
+func TestLoggerErrorf(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	setEnv()
+	log := New().With(Fields{
+		"key":"value",
+		"function": "TestLoggerError",
+	}).SetWriter(file)
+
+	param := "with param"
+	log.Errorf("error message %s", param)
+	expected := fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"error message with param\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerError\",\"key\":\"value\"},\"reportLocation\"", time.Now().Format(time.RFC3339))
+	if !outFileContains(expected) {
+		t.Errorf("output file %s does not containsubstring %s", OUTFILE, expected)
 	}
 }
 

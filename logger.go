@@ -155,6 +155,10 @@ func (l *Log) Debug(message string) {
 	l.log(LogLevelName[DEBUG], message)
 }
 
+func (l *Log) Debugf(message string, args ...interface{}) {
+	l.Debug(fmt.Sprintf(message, args...))
+}
+
 func (l *Log) Metric(message string) {
 	if !isValidLogLevel(INFO) {
 		return
@@ -171,12 +175,20 @@ func (l *Log) Info(message string) {
 	l.log(LogLevelName[INFO], message)
 }
 
+func (l *Log) Infof(message string, args ...interface{}) {
+	l.Info(fmt.Sprintf(message, args...))
+}
+
 func (l *Log) Warn(message string) {
 	if !isValidLogLevel(WARN) {
 		return
 	}
 
 	l.log(LogLevelName[WARN], message)
+}
+
+func (l *Log) Warnf(message string, args ...interface{}) {
+	l.Warn(fmt.Sprintf(message, args...))
 }
 
 func (l *Log) Error(message string) {
@@ -198,4 +210,8 @@ func (l *Log) Error(message string) {
 	}
 
 	l.log(LogLevelName[ERROR], message)
+}
+
+func (l *Log) Errorf(message string, args ...interface{}) {
+	l.Error(fmt.Sprintf(message, args...))
 }
