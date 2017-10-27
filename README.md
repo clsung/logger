@@ -26,7 +26,7 @@ func main() {
     log := log.New()
 
     // You can also initialize the logger with a context, the values will persisted throughout the scope of the logger instance
-    log := log.New().WithContext(Fields{
+    log := log.New().With(log.Fields{
         "user": "+1234567890",
         "action": "create-account",
     })
