@@ -20,7 +20,7 @@ import (
 // If no value is set, the default LOG_LEVEL will be INFO
 
 func main() {
-    // Stackdriver requires a project name and   version to be set. Use your environment for these values.
+    // Stackdriver requires a project name and version to be set. Use your environment for these values.
     // SERVICE should be your GCP project-id, e.g. robokiller-146813
     // VERSION is an arbitrary value
     log := logger.New()
