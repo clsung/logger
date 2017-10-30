@@ -153,7 +153,8 @@ func (l *Log) log(severity, message string) {
 func isValidLogLevel(logLevel severity) bool {
 	curLogLev, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
 	if !ok {
-		fmt.Println("logger error: the LOG_LEVEL environment variable is not set or has an incorrect value")
+		fmt.Println("logger warn: LOG_LEVEL is not set, defaulting to INFO")
+		os.Setenv("LOG_LEVEL", "INFO")
 	}
 
 	return curLogLev <= logLevel

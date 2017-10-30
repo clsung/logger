@@ -11,7 +11,13 @@ import (
 
 const outfile = "out.json"
 
-func setEnv() {
+func TestMain(m *testing.M) {
+	setup()
+	code := m.Run()
+	os.Exit(code)
+}
+
+func setup() {
 	os.Setenv("SERVICE", "robokiller-ivr")
 	os.Setenv("VERSION", "1.0")
 	os.Setenv("LOG_LEVEL", "DEBUG")
@@ -62,7 +68,6 @@ func TestLoggerDebugWithImplicitContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().With(Fields{
 		"key": "value",
 		"function" : "TestLoggerDebug",
@@ -79,7 +84,6 @@ func TestLoggerDebugWithoutContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().SetWriter(file)
 
 	log.Debug("debug message")
@@ -93,7 +97,6 @@ func TestLoggerDebugfWithoutContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().SetWriter(file)
 
 	param := "with param"
@@ -108,7 +111,6 @@ func TestLoggerMetric(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().SetWriter(file)
 
 	log.Metric("custom_metric")
@@ -122,7 +124,6 @@ func TestLoggerInfo(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().With(Fields{
 		"key":"value",
 		"function": "TestLoggerInfo",
@@ -139,7 +140,6 @@ func TestLoggerInfof(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().With(Fields{
 		"key":"value",
 		"function": "TestLoggerInfo",
@@ -157,7 +157,6 @@ func TestLoggerError(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().With(Fields{
 		"key":"value",
 		"function": "TestLoggerError",
@@ -184,7 +183,6 @@ func TestLoggerErrorWithoutContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().SetWriter(file)
 
 	log.Error("error message")
@@ -208,7 +206,6 @@ func TestLoggerErrorf(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().With(Fields{
 		"key":"value",
 		"function": "TestLoggerError",
@@ -226,7 +223,6 @@ func TestLoggerInfoWithSeveralContextEntries(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().With(Fields{
 		"function": "TestLoggerInfo",
 		"key":"value",
@@ -244,7 +240,6 @@ func TestLoggerErrorWithSeveralContextEntries(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
 
-	setEnv()
 	log := New().With(Fields{
 		"function": "TestLoggerError",
 		"key":"value",
