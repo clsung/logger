@@ -47,7 +47,7 @@ func outFileContains(substring string) bool {
 	return strings.Contains(fileData, substring)
 }
 
-func outFileDoesnotContain(substring string) bool {
+func outFileDoesNotContain(substring string) bool {
 	data, err := ioutil.ReadFile(OUTFILE)
 	if err != nil {
 		panic("Unable to read test file")
@@ -56,6 +56,7 @@ func outFileDoesnotContain(substring string) bool {
 	fileData := strings.TrimRight(string(data), "\n")
 	return !strings.Contains(fileData, substring)
 }
+
 func TestLoggerDebugWithImplicitContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
@@ -211,7 +212,7 @@ func TestLoggerErrorWithoutContext(t *testing.T) {
 	}
 
 	// Check that the error entry contains the context
-	if !outFileDoesnotContain("\"context\":{\"data\":") {
+	if !outFileDoesNotContain("\"context\":{\"data\":") {
 		t.Errorf("output file %s has a context nad it wasn't supposed to", OUTFILE)
 	}
 
