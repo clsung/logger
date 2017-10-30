@@ -14,6 +14,7 @@ const OUTFILE = "out.json"
 func setEnv() {
 	os.Setenv("SERVICE", "robokiller-ivr")
 	os.Setenv("VERSION", "1.0")
+	os.Setenv("LOG_LEVEL", "DEBUG")
 }
 
 func createOutFile() *os.File {

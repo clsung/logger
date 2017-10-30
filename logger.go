@@ -141,7 +141,7 @@ func (l *Log) log(severity, message string) {
 
 	payload, ok := json.Marshal(l.payload)
 	if ok != nil {
-		fmt.Errorf("cannot marshal payload: %s", ok.Error())
+		fmt.Printf("logger error: cannot marshal payload: %s", ok.Error())
 	}
 
 	fmt.Fprintln(l.writer, string(payload))
@@ -151,7 +151,7 @@ func (l *Log) log(severity, message string) {
 func isValidLogLevel(logLevel severity) bool {
 	curLogLev, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
 	if !ok {
-		fmt.Errorf("the LOG_LEVEL environment variable is not set or has an incorrect value")
+		fmt.Println("logger error: the LOG_LEVEL environment variable is not set or has an incorrect value")
 	}
 
 	return curLogLev <= logLevel
