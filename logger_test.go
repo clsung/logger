@@ -75,25 +75,6 @@ func TestLoggerDebugWithImplicitContext(t *testing.T) {
 	}
 }
 
-
-func TestLoggerDebugWithExplicitContext(t *testing.T) {
-	t.Skip()
-	file := createOutFile()
-	defer file.Close()
-
-	setEnv()
-	log := New().With(Fields{
-		"key": "value",
-		"function" : "TestLoggerDebug",
-	}).SetWriter(file)
-
-	log.With(Fields{"function": "TestLoggerDebug"}).SetWriter(file).Debug("debug message")
-	expected := fmt.Sprintf("{\"severity\":\"DEBUG\",\"eventTime\":\"%s\",\"message\":\"debug message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerDebug\"}}}", time.Now().Format(time.RFC3339))
-	if !compareWithOutFile(expected) {
-		t.Errorf("output file %s does not match expected string %s", outfile, expected)
-	}
-}
-
 func TestLoggerDebugWithoutContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
