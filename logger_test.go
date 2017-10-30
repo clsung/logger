@@ -47,6 +47,15 @@ func outFileContains(substring string) bool {
 	return strings.Contains(fileData, substring)
 }
 
+func outFileDoesnotContain(substring string) bool {
+	data, err := ioutil.ReadFile(OUTFILE)
+	if err != nil {
+		panic("Unable to read test file")
+	}
+
+	fileData := strings.TrimRight(string(data), "\n")
+	return !strings.Contains(fileData, substring)
+}
 func TestLoggerDebugWithImplicitContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
@@ -180,6 +189,30 @@ func TestLoggerError(t *testing.T) {
 	// Check that the error entry contains the context
 	if !outFileContains("\"context\":{\"data\":{\"function\":\"TestLoggerError\",\"key\":\"value\"}") {
 		t.Errorf("output file %s does not contain the context", OUTFILE)
+	}
+
+	// Check that the error entry has an stacktrace key
+	if !outFileContains("stacktrace") {
+		t.Errorf("output file %s does not contain a stacktrace key", OUTFILE)
+	}
+}
+
+func TestLoggerErrorWithoutContext(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	setEnv()
+	log := New().SetWriter(file)
+
+	log.Error("error message")
+	expected := fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"error message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"reportLocation\"", time.Now().Format(time.RFC3339))
+	if !outFileContains(expected) {
+		t.Errorf("output file %s does not containsubstring %s", OUTFILE, expected)
+	}
+
+	// Check that the error entry contains the context
+	if !outFileDoesnotContain("\"context\":{\"data\":") {
+		t.Errorf("output file %s has a context nad it wasn't supposed to", OUTFILE)
 	}
 
 	// Check that the error entry has an stacktrace key

@@ -182,6 +182,13 @@ func (l *Log) Error(message string) {
 	runtime.Stack(buffer, false)
 	_, file, line, _ := runtime.Caller(1)
 
+	// Set the data when the context is empty
+	if l.Payload.Context == nil {
+		l.Payload.Context = &Context{
+			Data: Fields{},
+		}
+	}
+
 	l.Payload = &Payload{
 		ServiceContext: l.Payload.ServiceContext,
 		Context: &Context{
