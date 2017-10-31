@@ -155,13 +155,6 @@ func (l *Log) log(severity, message string) {
 // Checks whether the specified log level is valid in the current environment
 func isValidLogLevel(s severity) bool {
 	return s >= logLevel
-	//curLogLev, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
-	//if !ok {
-	//	fmt.Println("logger warn: LOG_LEVEL is not set, defaulting to INFO")
-	//	os.Setenv("LOG_LEVEL", "INFO")
-	//}
-	//
-	//return curLogLev <= logLevel
 }
 
 // With is used as a chained method to specify which values go in the log entry's context
@@ -179,8 +172,7 @@ func (l *Log) Debug(message string) {
 		return
 	}
 
-	// @TODO use debug.String()
-	l.log(logLevelName[debug], message)
+	l.log(debug.String(), message)
 }
 
 // Debugf prints out a message with DEBUG severity level
@@ -194,7 +186,7 @@ func (l *Log) Metric(message string) {
 		return
 	}
 
-	l.log(logLevelName[info], message)
+	l.log(info.String(), message)
 }
 
 // Info prints out a message with INFO severity level
@@ -203,7 +195,7 @@ func (l *Log) Info(message string) {
 		return
 	}
 
-	l.log(logLevelName[info], message)
+	l.log(info.String(), message)
 }
 
 // Infof prints out a message with INFO severity level
@@ -217,7 +209,7 @@ func (l *Log) Warn(message string) {
 		return
 	}
 
-	l.log(logLevelName[warn], message)
+	l.log(warn.String(), message)
 }
 
 // Warnf prints out a message with WARN severity level
@@ -252,7 +244,7 @@ func (l *Log) Error(message string) {
 		Stacktrace: string(bytes.Trim(buffer, "\x00")),
 	}
 
-	l.log(logLevelName[error], message)
+	l.log(error.String(), message)
 }
 
 // Errorf prints out a message with ERROR severity level
