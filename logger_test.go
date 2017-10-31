@@ -18,9 +18,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	os.Setenv("SERVICE", "robokiller-ivr")
-	os.Setenv("VERSION", "1.0")
-	os.Setenv("LOG_LEVEL", "DEBUG")
+	initConfig(debug, "robokiller-ivr", "1.0")
 }
 
 func createOutFile() *os.File {

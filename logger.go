@@ -19,6 +19,10 @@ const (
 	error
 )
 
+func (s severity)String() string {
+	return logLevelName[s]
+}
+
 var logLevelName = [...]string{
 	"DEBUG",
 	"INFO",
@@ -38,8 +42,8 @@ type Fields map[string]string
 
 // ServiceContext is required by the Stackdriver Error format
 type ServiceContext struct {
-	Service string `json:"service"`
-	Version string `json:"version"`
+	Service string `json:"service,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 // ReportLocation is required by the Stackdriver Error format
@@ -70,6 +74,7 @@ type Payload struct {
 // ingested and processed by Google Cloud Platform Stackdriver Logging and Error Reporting.
 // See: https://cloud.google.com/error-reporting/docs/formatting-error-messages
 // The resulting output has the following format, optional fields are... well, optional:
+// @TODO Move this to the README
 /**
     {
        "severity": "ERROR",
@@ -98,17 +103,42 @@ type Log struct {
 	writer  io.Writer
 }
 
-// New instantiates and returns a Log object
-func New() *Log {
+var (
+	logLevel severity
+	service  string
+	version  string
+)
+
+// @TODO Make this call a initConfig() function
+func init() {
+	ll, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
+	if !ok {
+		fmt.Println("logger warn: LOG_LEVEL is not valid or not set, defaulting to INFO")
+		logLevel = logLevelValue[info.String()]
+	} else {
+		logLevel = ll
+	}
+
 	if os.Getenv("SERVICE") == "" || os.Getenv("VERSION") == "" {
 		fmt.Println("logger error: cannot instantiate the logger, make sure the SERVICE and VERSION environment vars are set correctly")
 	}
 
+	initConfig(logLevel, os.Getenv("SERVICE"), os.Getenv("VERSION"))
+}
+
+func initConfig(lvl severity, svc, ver string) {
+	logLevel = lvl
+	service = svc
+	version = ver
+}
+
+// New instantiates and returns a Log object
+func New() *Log {
 	return &Log{
 		payload: &Payload{
 			ServiceContext: &ServiceContext{
-				Service: os.Getenv("SERVICE"),
-				Version: os.Getenv("VERSION"),
+				Service: service,
+				Version: version,
 			},
 		},
 		writer: os.Stdout,
@@ -132,6 +162,7 @@ func (l *Log) set(key, val string) {
 }
 
 func (l *Log) log(severity, message string) {
+	// Do not persist the payload here, just format it, marshal it and return it
 	l.payload = &Payload{
 		Severity:       severity,
 		EventTime:      time.Now().Format(time.RFC3339),
@@ -150,14 +181,15 @@ func (l *Log) log(severity, message string) {
 }
 
 // Checks whether the specified log level is valid in the current environment
-func isValidLogLevel(logLevel severity) bool {
-	curLogLev, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
-	if !ok {
-		fmt.Println("logger warn: LOG_LEVEL is not set, defaulting to INFO")
-		os.Setenv("LOG_LEVEL", "INFO")
-	}
-
-	return curLogLev <= logLevel
+func isValidLogLevel(s severity) bool {
+	return s >= logLevel
+	//curLogLev, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
+	//if !ok {
+	//	fmt.Println("logger warn: LOG_LEVEL is not set, defaulting to INFO")
+	//	os.Setenv("LOG_LEVEL", "INFO")
+	//}
+	//
+	//return curLogLev <= logLevel
 }
 
 // With is used as a chained method to specify which values go in the log entry's context
@@ -175,6 +207,7 @@ func (l *Log) Debug(message string) {
 		return
 	}
 
+	// @TODO use debug.String()
 	l.log(logLevelName[debug], message)
 }
 
@@ -233,6 +266,7 @@ func (l *Log) Error(message string) {
 		}
 	}
 
+	// @TODO Create a new logger here and print it
 	l.payload = &Payload{
 		ServiceContext: l.payload.ServiceContext,
 		Context: &Context{
