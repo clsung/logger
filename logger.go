@@ -65,7 +65,7 @@ type Payload struct {
 	EventTime      string          `json:"eventTime"`
 	Caller         string          `json:"caller,omitempty"`
 	Message        string          `json:"message"`
-	ServiceContext *ServiceContext `json:"serviceContext"`
+	ServiceContext *ServiceContext `json:"serviceContext,omitempty"`
 	Context        *Context        `json:"context,omitempty"`
 	Stacktrace     string          `json:"stacktrace,omitempty"`
 }

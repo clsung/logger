@@ -62,6 +62,136 @@ func outFileDoesNotContain(substring string) bool {
 	return !strings.Contains(fileData, substring)
 }
 
+func TestLoggerInfoWithOneTimeContext(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	log := New().With(Fields{
+		"key": "value",
+		"function" : "TestLoggerDebug",
+	}).SetWriter(file)
+
+	log.Info("info message")
+	expected := fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"info message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerDebug\",\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", outfile, expected)
+	}
+
+	// Clean-up the output file in preparation for new assertions
+	cleanFile := createOutFile()
+	defer cleanFile.Close()
+
+	log.With(Fields{"foo":"bar"}).SetWriter(cleanFile).Info("unique info message")
+	expected = fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"unique info message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"foo\":\"bar\"}}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", outfile, expected)
+	}
+
+	// Clean-up the output file in preparation for new assertions
+	lastFile := createOutFile()
+	defer lastFile.Close()
+
+	log.SetWriter(lastFile).Info("unique info message")
+	expected = fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"unique info message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerDebug\",\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", outfile, expected)
+	}
+}
+
+func TestLoggerErrorWithOneTimeContext(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	log := New().With(Fields{
+		"key": "value",
+		"function" : "TestLoggerError",
+	}).SetWriter(file)
+
+	log.Error("error message")
+	expected := fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"error message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerError\",\"key\":\"value\"},\"reportLocation\"", time.Now().Format(time.RFC3339))
+	if !outFileContains(expected) {
+		t.Errorf("output file %s does not contain substring %s", outfile, expected)
+	}
+
+	// Check that the error entry contains the context
+	if !outFileContains("\"context\":{\"data\":{\"function\":\"TestLoggerError\",\"key\":\"value\"}") {
+		t.Errorf("output file %s does not contain the context", outfile)
+	}
+
+	// Check that the error entry has an stacktrace key
+	if !outFileContains("stacktrace") {
+		t.Errorf("output file %s does not contain a stacktrace key", outfile)
+	}
+
+	// Clean-up the output file in preparation for new assertions
+	cleanFile := createOutFile()
+	defer cleanFile.Close()
+
+	log.With(Fields{"foo":"bar"}).SetWriter(cleanFile).Error("unique error message")
+	expected = fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"unique error message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"foo\":\"bar\"},\"reportLocation\"", time.Now().Format(time.RFC3339))
+	if !outFileContains(expected) {
+		t.Errorf("output file %s does not contain substring %s", outfile, expected)
+	}
+
+	// Check that the error entry contains the context
+	if !outFileContains("\"context\":{\"data\":{\"foo\":\"bar\"}") {
+		t.Errorf("output file %s does not contain the context", outfile)
+	}
+
+	// Check that the error entry has an stacktrace key
+	if !outFileContains("stacktrace") {
+		t.Errorf("output file %s does not contain a stacktrace key", outfile)
+	}
+
+	// Clean-up the output file in preparation for new assertions
+	lastFile := createOutFile()
+	defer lastFile.Close()
+
+	log.SetWriter(lastFile).Error("unique error message")
+	expected = fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"unique error message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerError\",\"key\":\"value\"},\"reportLocation\"", time.Now().Format(time.RFC3339))
+	if !outFileContains(expected) {
+		t.Errorf("output file %s does not contain substring %s", outfile, expected)
+	}
+
+	// Check that the error entry contains the context
+	if !outFileContains("\"context\":{\"data\":{\"function\":\"TestLoggerError\",\"key\":\"value\"}") {
+		t.Errorf("output file %s does not contain the context", outfile)
+	}
+
+	// Check that the error entry has an stacktrace key
+	if !outFileContains("stacktrace") {
+		t.Errorf("output file %s does not contain a stacktrace key", outfile)
+	}
+}
+
+func TestLoggerWithDifferentLogLevels(t *testing.T) {
+	file := createOutFile()
+	defer file.Close()
+
+	initConfig(warn, "robokiller-ivr", "1.0")
+	log := New().With(Fields{
+		"key": "value",
+	}).SetWriter(file)
+
+	// LogLevel set to warn, DEBUG messages should not be output
+	log.Debug("debug message")
+	if !compareWithOutFile("") {
+		t.Errorf("output file %s does not match empty string", outfile)
+	}
+
+	// LogLevel set to warn, INFO messages should not be output
+	log.Info("info message")
+	if !compareWithOutFile("") {
+		t.Errorf("output file %s does not match empty string", outfile)
+	}
+
+	log.Warn("warn message")
+	expected := fmt.Sprintf("{\"severity\":\"WARN\",\"eventTime\":\"%s\",\"message\":\"warn message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"key\":\"value\"}}}", time.Now().Format(time.RFC3339))
+	if !compareWithOutFile(expected) {
+		t.Errorf("output file %s does not match expected string %s", outfile, expected)
+	}
+}
+
 func TestLoggerDebugWithImplicitContext(t *testing.T) {
 	file := createOutFile()
 	defer file.Close()
