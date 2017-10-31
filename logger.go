@@ -118,19 +118,9 @@ func New() *Log {
 }
 
 // SetWriter exists mainly for tests, allowing to change the output from STDOUT to FILE
-func (l *Log) SetWriter(w io.Writer) *Log {
+func (l Log) SetWriter(w io.Writer) Log {
 	l.writer = w
 	return l
-}
-
-func (l *Log) set(key, val string) {
-	if l.payload.Context == nil {
-		l.payload.Context = &Context{
-			Data: Fields{},
-		}
-	}
-
-	l.payload.Context.Data[key] = val
 }
 
 func (l *Log) log(severity, message string) {
@@ -158,16 +148,21 @@ func isValidLogLevel(s severity) bool {
 }
 
 // With is used as a chained method to specify which values go in the log entry's context
-func (l *Log) With(fields Fields) *Log {
-	for k, v := range fields {
-		l.set(k, v)
+func (l Log) With(fields Fields) Log {
+	return Log{
+		payload: &Payload{
+			ServiceContext: l.payload.ServiceContext,
+			Context: &Context{
+				Data: fields,
+			},
+			Stacktrace: "",
+		},
+		writer: os.Stdout,
 	}
-
-	return l
 }
 
 // Debug prints out a message with DEBUG severity level
-func (l *Log) Debug(message string) {
+func (l Log) Debug(message string) {
 	if !isValidLogLevel(debug) {
 		return
 	}
@@ -176,12 +171,12 @@ func (l *Log) Debug(message string) {
 }
 
 // Debugf prints out a message with DEBUG severity level
-func (l *Log) Debugf(message string, args ...interface{}) {
+func (l Log) Debugf(message string, args ...interface{}) {
 	l.Debug(fmt.Sprintf(message, args...))
 }
 
 // Metric prints out a message with INFO severity and no extra fields
-func (l *Log) Metric(message string) {
+func (l Log) Metric(message string) {
 	if !isValidLogLevel(info) {
 		return
 	}
@@ -190,7 +185,7 @@ func (l *Log) Metric(message string) {
 }
 
 // Info prints out a message with INFO severity level
-func (l *Log) Info(message string) {
+func (l Log) Info(message string) {
 	if !isValidLogLevel(info) {
 		return
 	}
@@ -199,12 +194,12 @@ func (l *Log) Info(message string) {
 }
 
 // Infof prints out a message with INFO severity level
-func (l *Log) Infof(message string, args ...interface{}) {
+func (l Log) Infof(message string, args ...interface{}) {
 	l.Info(fmt.Sprintf(message, args...))
 }
 
 // Warn prints out a message with WARN severity level
-func (l *Log) Warn(message string) {
+func (l Log) Warn(message string) {
 	if !isValidLogLevel(warn) {
 		return
 	}
@@ -213,12 +208,12 @@ func (l *Log) Warn(message string) {
 }
 
 // Warnf prints out a message with WARN severity level
-func (l *Log) Warnf(message string, args ...interface{}) {
+func (l Log) Warnf(message string, args ...interface{}) {
 	l.Warn(fmt.Sprintf(message, args...))
 }
 
 // Error prints out a message with ERROR severity level
-func (l *Log) Error(message string) {
+func (l Log) Error(message string) {
 	buffer := make([]byte, 1024)
 	runtime.Stack(buffer, false)
 	_, file, line, _ := runtime.Caller(1)
@@ -230,7 +225,6 @@ func (l *Log) Error(message string) {
 		}
 	}
 
-	// @TODO Create a new logger here and print it
 	l.payload = &Payload{
 		ServiceContext: l.payload.ServiceContext,
 		Context: &Context{
@@ -248,6 +242,6 @@ func (l *Log) Error(message string) {
 }
 
 // Errorf prints out a message with ERROR severity level
-func (l *Log) Errorf(message string, args ...interface{}) {
+func (l Log) Errorf(message string, args ...interface{}) {
 	l.Error(fmt.Sprintf(message, args...))
 }
