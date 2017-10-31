@@ -51,3 +51,31 @@ func main() {
     log.With(logger.Fields{"key":"val"}).Error("error message goes here")
     log.With(logger.Fields{"key":"val"}).Errorf("error message with %s", param)
 }
+```
+
+## Output
+
+The errors require a specific JSON format for them to be ingested and processed by Google Cloud Platform Stackdriver Logging and Error Reporting. See: [https://cloud.google.com/error-reporting/docs/formatting-error-messages](https://cloud.google.com/error-reporting/docs/formatting-error-messages). The resulting output has the following format, optional fields are... well, optional:
+```json
+       {
+          "severity": "ERROR",
+          "eventTime": "2017-04-26T02:29:33-04:00",
+          "message": "An error just happened!",
+          "serviceContext": {
+             "service": "robokiller-ivr",
+             "version": "1.0"
+          },
+          "context": {
+            "data": {
+              "clientIP": "127.0.0.1"
+              "userAgent": "Mosaic 1.0"
+            },
+            "reportLocation": {
+              "filePath": "\/Users\/mc\/Documents\/src\/github.com\/macuenca\/apex\/mauricio.go",
+              "functionName": "unknown",
+              "lineNumber": 15
+            }
+          },
+         "stacktrace": "goroutine 1 [running]:main.main()\n\t\/github.com\/macuenca\/mauricio.go:15 +0x1a9\n"
+       }
+```
