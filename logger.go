@@ -1,183 +1,253 @@
 package logger
 
 import (
-	"time"
-	"fmt"
-	"encoding/json"
-	"runtime"
 	"bytes"
-	"os"
+	"encoding/json"
+	"fmt"
 	"io"
+	"os"
+	"runtime"
+	"time"
 )
 
 type severity int
 
 const (
-	DEBUG severity = iota
-	INFO
-	WARN
-	ERROR
+	debug severity = iota
+	info
+	warn
+	error
 )
 
-var LogLevelName = [...]string{
+func (s severity) String() string {
+	return logLevelName[s]
+}
+
+var logLevelName = [...]string{
 	"DEBUG",
 	"INFO",
 	"WARN",
 	"ERROR",
 }
 
-var LogLevelValue = map[string]severity{
-	"DEBUG": DEBUG,
-	"INFO":  INFO,
-	"WARN":  WARN,
-	"ERROR": ERROR,
+var logLevelValue = map[string]severity{
+	"DEBUG": debug,
+	"INFO":  info,
+	"WARN":  warn,
+	"ERROR": error,
 }
 
+// Fields is used to wrap the log entries payload
 type Fields map[string]string
 
+// ServiceContext is required by the Stackdriver Error format
 type ServiceContext struct {
-	Service string `json:"service"`
-	Version string `json:"version"`
+	Service string `json:"service,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
+// ReportLocation is required by the Stackdriver Error format
 type ReportLocation struct {
 	FilePath     string `json:"filePath"`
 	FunctionName string `json:"functionName"`
 	LineNumber   int    `json:"lineNumber"`
 }
 
+// Context is required by the Stackdriver Error format
 type Context struct {
 	Data           Fields          `json:"data,omitempty"`
 	ReportLocation *ReportLocation `json:"reportLocation,omitempty"`
 }
 
+// Payload groups all the data for a log entry
 type Payload struct {
 	Severity       string          `json:"severity"`
 	EventTime      string          `json:"eventTime"`
 	Caller         string          `json:"caller,omitempty"`
 	Message        string          `json:"message"`
-	Data           Fields          `json:"data,omitempty"`
-	ServiceContext *ServiceContext `json:"serviceContext"`
+	ServiceContext *ServiceContext `json:"serviceContext,omitempty"`
 	Context        *Context        `json:"context,omitempty"`
 	Stacktrace     string          `json:"stacktrace,omitempty"`
 }
 
+// Log is the main type for the logger package
 type Log struct {
-	Payload *Payload
-	writer io.Writer
+	payload *Payload
+	writer  io.Writer
 }
 
-func New() *Log {
+var (
+	logLevel severity
+	service  string
+	version  string
+)
+
+func init() {
+	ll, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
+	if !ok {
+		fmt.Println("logger warn: LOG_LEVEL is not valid or not set, defaulting to INFO")
+		logLevel = logLevelValue[info.String()]
+	} else {
+		logLevel = ll
+	}
+
 	if os.Getenv("SERVICE") == "" || os.Getenv("VERSION") == "" {
-		fmt.Errorf("cannot instantiate the logger, make sure the SERVICE and VERSION environment vars are set correctly")
+		fmt.Println("logger error: cannot instantiate the logger, make sure the SERVICE and VERSION environment vars are set correctly")
+	}
+
+	initConfig(logLevel, os.Getenv("SERVICE"), os.Getenv("VERSION"))
+}
+
+func initConfig(lvl severity, svc, ver string) {
+	logLevel = lvl
+	service = svc
+	version = ver
+}
+
+// New instantiates and returns a Log object
+func New() *Log {
+	// Set the ServiceContext only within a GCP context
+	p := &Payload{}
+	if service != "" && version != "" {
+		p = &Payload{
+			ServiceContext: &ServiceContext{
+				Service: service,
+				Version: version,
+			},
+		}
 	}
 
 	return &Log{
-		Payload: &Payload{
-			ServiceContext: &ServiceContext{
-				Service: os.Getenv("SERVICE"),
-				Version: os.Getenv("VERSION"),
+		payload: p,
+		writer: os.Stdout,
+	}
+}
+
+// SetWriter exists mainly for tests, allowing to change the output from STDOUT to FILE
+func (l Log) SetWriter(w io.Writer) Log {
+	l.writer = w
+	return l
+}
+
+func (l *Log) log(severity, message string) {
+	// Do not persist the payload here, just format it, marshal it and return it
+	l.payload = &Payload{
+		Severity:       severity,
+		EventTime:      time.Now().Format(time.RFC3339),
+		Message:        message,
+		ServiceContext: l.payload.ServiceContext,
+		Context:        l.payload.Context,
+		Stacktrace:     l.payload.Stacktrace,
+	}
+
+	payload, ok := json.Marshal(l.payload)
+	if ok != nil {
+		fmt.Printf("logger error: cannot marshal payload: %s", ok.Error())
+	}
+
+	fmt.Fprintln(l.writer, string(payload))
+}
+
+// Checks whether the specified log level is valid in the current environment
+func isValidLogLevel(s severity) bool {
+	return s >= logLevel
+}
+
+// With is used as a chained method to specify which values go in the log entry's context
+func (l Log) With(fields Fields) Log {
+	return Log{
+		payload: &Payload{
+			ServiceContext: l.payload.ServiceContext,
+			Context: &Context{
+				Data: fields,
 			},
+			Stacktrace: "",
 		},
 		writer: os.Stdout,
 	}
 }
 
-func (l *Log) SetWriter(w io.Writer) {
-	l.writer = w
-}
-
-func (l *Log) Set(key, val string) {
-	if l.Payload.Context == nil {
-		l.Payload.Context = &Context{
-			Data: Fields{},
-		}
-	}
-
-	l.Payload.Context.Data[key] = val
-}
-
-func (l *Log) log(severity, message string, data Fields) {
-	l.Payload = &Payload{
-		Severity: severity,
-		EventTime: time.Now().Format(time.RFC3339),
-		Message: message,
-		Data: data,
-		ServiceContext: l.Payload.ServiceContext,
-		Context: l.Payload.Context,
-		Stacktrace: l.Payload.Stacktrace,
-	}
-
-	payload, ok := json.Marshal(l.Payload)
-	if ok != nil {
-		fmt.Errorf("cannot marshal payload: %s", ok.Error())
-	}
-
-	fmt.Fprintln(l.writer, string(payload))
-
-	// Unset the current payload data
-	l.Payload.Data = nil
-}
-
-// Checks whether the specified log level is valid in the current environment
-func isValidLogLevel(logLevel severity) bool {
-	curLogLev, ok := LogLevelValue[os.Getenv("LOG_LEVEL")]
-	if !ok {
-		fmt.Errorf("the LOG_LEVEL environment variable is not set or has an incorrect value")
-	}
-
-	return curLogLev <= logLevel
-}
-
-func (l *Log) Debug(message string, data Fields) {
-	if !isValidLogLevel(DEBUG) {
+// Debug prints out a message with DEBUG severity level
+func (l Log) Debug(message string) {
+	if !isValidLogLevel(debug) {
 		return
 	}
 
-	l.log(LogLevelName[DEBUG], message, data)
+	l.log(debug.String(), message)
 }
 
-func (l *Log) Metric(message string) {
-	if !isValidLogLevel(INFO) {
+// Debugf prints out a message with DEBUG severity level
+func (l Log) Debugf(message string, args ...interface{}) {
+	l.Debug(fmt.Sprintf(message, args...))
+}
+
+// Metric prints out a message with INFO severity and no extra fields
+func (l Log) Metric(message string) {
+	if !isValidLogLevel(info) {
 		return
 	}
 
-	l.log(LogLevelName[INFO], message, Fields{})
+	l.log(info.String(), message)
 }
 
-func (l *Log) Info(message string, data Fields) {
-	if !isValidLogLevel(INFO) {
+// Info prints out a message with INFO severity level
+func (l Log) Info(message string) {
+	if !isValidLogLevel(info) {
 		return
 	}
 
-	l.log(LogLevelName[INFO], message, data)
+	l.log(info.String(), message)
 }
 
-func (l *Log) Warn(message string, data Fields) {
-	if !isValidLogLevel(WARN) {
+// Infof prints out a message with INFO severity level
+func (l Log) Infof(message string, args ...interface{}) {
+	l.Info(fmt.Sprintf(message, args...))
+}
+
+// Warn prints out a message with WARN severity level
+func (l Log) Warn(message string) {
+	if !isValidLogLevel(warn) {
 		return
 	}
 
-	l.log(LogLevelName[WARN], message, data)
+	l.log(warn.String(), message)
 }
 
-func (l *Log) Error(message string, data Fields) {
+// Warnf prints out a message with WARN severity level
+func (l Log) Warnf(message string, args ...interface{}) {
+	l.Warn(fmt.Sprintf(message, args...))
+}
+
+// Error prints out a message with ERROR severity level
+func (l Log) Error(message string) {
 	buffer := make([]byte, 1024)
 	runtime.Stack(buffer, false)
 	_, file, line, _ := runtime.Caller(1)
 
-	l.Payload = &Payload{
-		ServiceContext: l.Payload.ServiceContext,
+	// Set the data when the context is empty
+	if l.payload.Context == nil {
+		l.payload.Context = &Context{
+			Data: Fields{},
+		}
+	}
+
+	l.payload = &Payload{
+		ServiceContext: l.payload.ServiceContext,
 		Context: &Context{
-			Data: l.Payload.Context.Data,
+			Data: l.payload.Context.Data,
 			ReportLocation: &ReportLocation{
-				FilePath: file,
+				FilePath:     file,
 				FunctionName: "unknown",
-				LineNumber: line,
+				LineNumber:   line,
 			},
 		},
 		Stacktrace: string(bytes.Trim(buffer, "\x00")),
 	}
 
-	l.log(LogLevelName[ERROR], message, data)
+	l.log(error.String(), message)
+}
+
+// Errorf prints out a message with ERROR severity level
+func (l Log) Errorf(message string, args ...interface{}) {
+	l.Error(fmt.Sprintf(message, args...))
 }

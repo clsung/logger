@@ -23,28 +23,59 @@ func main() {
     // Stackdriver requires a project name and version to be set. Use your environment for these values.
     // SERVICE should be your GCP project-id, e.g. robokiller-146813
     // VERSION is an arbitrary value
-    log, err := log.New()
-    if err != nil {
-        fmt.Errorf("cannot initiate logger")
-    }
+    log := logger.New()
+
+    // You can also initialize the logger with a context, the values will persisted throughout the scope of the logger instance
+    log := logger.New().With(log.Fields{
+        "user": "+1234567890",
+        "action": "create-account",
+    })
 
     // A metric is an INFO log entry without a payload
     log.Metric("CUSTOM_METRIC_ENTRY")
 
-    // Add context values to all subsequent log entries using Set(), the values will persisted for the scope of the logger instance
-    log.Set("user", "+1234567890")
-    log.Set("action", "create-account")
-
     // Log a DEBUG message, only visible in when LOG_LEVEL is set to DEBUG
-    log.Debug("debug message goes here", log.Fields{"key":"val"})
+    log.With(logger.Fields{"key":"val"}).Debug("debug message goes here")
+    log.With(logger.Fields{"key":"val"}).Debugf("debug message with %s", param)
 
     // Log an INFO message
-    log.Info("info message goes here", log.Fields{"key":"val"})
+    log.With(logger.Fields{"key":"val"}).Info("info message goes here")
+    log.With(logger.Fields{"key":"val"}).Infof("info message with %s", param)
 
     // Log a WARN message
-    log.Warn("warn message goes here", log.Fields{"key":"val"})
+    log.With(logger.Fields{"key":"val"}).Warn("warn message goes here")
+    log.With(logger.Fields{"key":"val"}).Warnf("warn message with %s", param)
 
     // Error() prints the stacktrace as part of the payload for each entry and sends the
     // data to Stackdriver Error Reporting service
-    log.Error("error message goes here", log.Fields{"key":"val"})
+    log.With(logger.Fields{"key":"val"}).Error("error message goes here")
+    log.With(logger.Fields{"key":"val"}).Errorf("error message with %s", param)
 }
+```
+
+## Output
+
+The errors require a specific JSON format for them to be ingested and processed by Google Cloud Platform Stackdriver Logging and Error Reporting. See: [https://cloud.google.com/error-reporting/docs/formatting-error-messages](https://cloud.google.com/error-reporting/docs/formatting-error-messages). The resulting output has the following format, optional fields are... well, optional:
+```json
+       {
+          "severity": "ERROR",
+          "eventTime": "2017-04-26T02:29:33-04:00",
+          "message": "An error just happened!",
+          "serviceContext": {
+             "service": "robokiller-ivr",
+             "version": "1.0"
+          },
+          "context": {
+            "data": {
+              "clientIP": "127.0.0.1"
+              "userAgent": "Mosaic 1.0"
+            },
+            "reportLocation": {
+              "filePath": "\/Users\/mc\/Documents\/src\/github.com\/macuenca\/apex\/mauricio.go",
+              "functionName": "unknown",
+              "lineNumber": 15
+            }
+          },
+         "stacktrace": "goroutine 1 [running]:main.main()\n\t\/github.com\/macuenca\/mauricio.go:15 +0x1a9\n"
+       }
+```
