@@ -14,11 +14,17 @@ const outfile = "out.json"
 func TestMain(m *testing.M) {
 	setup()
 	code := m.Run()
+	tearDown()
 	os.Exit(code)
 }
 
 func setup() {
 	initConfig(debug, "robokiller-ivr", "1.0")
+}
+
+func tearDown() {
+	// Delete output test file if exists
+	os.Remove(outfile)
 }
 
 func createOutFile() *os.File {
