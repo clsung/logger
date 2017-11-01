@@ -1,13 +1,13 @@
 package logger
 
 import (
-	"time"
-	"fmt"
-	"encoding/json"
-	"runtime"
 	"bytes"
-	"os"
+	"encoding/json"
+	"fmt"
 	"io"
+	"os"
+	"runtime"
+	"time"
 )
 
 type severity int
@@ -19,7 +19,7 @@ const (
 	error
 )
 
-func (s severity)String() string {
+func (s severity) String() string {
 	return logLevelName[s]
 }
 
@@ -230,9 +230,9 @@ func (l Log) Error(message string) {
 		Context: &Context{
 			Data: l.payload.Context.Data,
 			ReportLocation: &ReportLocation{
-				FilePath: file,
+				FilePath:     file,
 				FunctionName: "unknown",
-				LineNumber: line,
+				LineNumber:   line,
 			},
 		},
 		Stacktrace: string(bytes.Trim(buffer, "\x00")),

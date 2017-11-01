@@ -1,12 +1,12 @@
 package logger
 
 import (
-	"testing"
-	"os"
-	"io/ioutil"
 	"fmt"
-	"time"
+	"io/ioutil"
+	"os"
 	"strings"
+	"testing"
+	"time"
 )
 
 const outfile = "out.json"
@@ -73,8 +73,8 @@ func TestLoggerInfoWithOneTimeContext(t *testing.T) {
 	defer file.Close()
 
 	log := New().With(Fields{
-		"key": "value",
-		"function" : "TestLoggerDebug",
+		"key":      "value",
+		"function": "TestLoggerDebug",
 	}).SetWriter(file)
 
 	log.Info("info message")
@@ -87,7 +87,7 @@ func TestLoggerInfoWithOneTimeContext(t *testing.T) {
 	cleanFile := createOutFile()
 	defer cleanFile.Close()
 
-	log.With(Fields{"foo":"bar"}).SetWriter(cleanFile).Info("unique info message")
+	log.With(Fields{"foo": "bar"}).SetWriter(cleanFile).Info("unique info message")
 	expected = fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"unique info message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"foo\":\"bar\"}}}", time.Now().Format(time.RFC3339))
 	if !compareWithOutFile(expected) {
 		t.Errorf("output file %s does not match expected string %s", outfile, expected)
@@ -109,8 +109,8 @@ func TestLoggerErrorWithOneTimeContext(t *testing.T) {
 	defer file.Close()
 
 	log := New().With(Fields{
-		"key": "value",
-		"function" : "TestLoggerError",
+		"key":      "value",
+		"function": "TestLoggerError",
 	}).SetWriter(file)
 
 	log.Error("error message")
@@ -133,7 +133,7 @@ func TestLoggerErrorWithOneTimeContext(t *testing.T) {
 	cleanFile := createOutFile()
 	defer cleanFile.Close()
 
-	log.With(Fields{"foo":"bar"}).SetWriter(cleanFile).Error("unique error message")
+	log.With(Fields{"foo": "bar"}).SetWriter(cleanFile).Error("unique error message")
 	expected = fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"unique error message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"foo\":\"bar\"},\"reportLocation\"", time.Now().Format(time.RFC3339))
 	if !outFileContains(expected) {
 		t.Errorf("output file %s does not contain substring %s", outfile, expected)
@@ -203,8 +203,8 @@ func TestLoggerDebugWithImplicitContext(t *testing.T) {
 	defer file.Close()
 
 	log := New().With(Fields{
-		"key": "value",
-		"function" : "TestLoggerDebug",
+		"key":      "value",
+		"function": "TestLoggerDebug",
 	}).SetWriter(file)
 
 	log.Debug("debug message")
@@ -259,7 +259,7 @@ func TestLoggerInfo(t *testing.T) {
 	defer file.Close()
 
 	log := New().With(Fields{
-		"key":"value",
+		"key":      "value",
 		"function": "TestLoggerInfo",
 	}).SetWriter(file)
 
@@ -275,7 +275,7 @@ func TestLoggerInfof(t *testing.T) {
 	defer file.Close()
 
 	log := New().With(Fields{
-		"key":"value",
+		"key":      "value",
 		"function": "TestLoggerInfo",
 	}).SetWriter(file)
 
@@ -292,7 +292,7 @@ func TestLoggerError(t *testing.T) {
 	defer file.Close()
 
 	log := New().With(Fields{
-		"key":"value",
+		"key":      "value",
 		"function": "TestLoggerError",
 	}).SetWriter(file)
 
@@ -341,7 +341,7 @@ func TestLoggerErrorf(t *testing.T) {
 	defer file.Close()
 
 	log := New().With(Fields{
-		"key":"value",
+		"key":      "value",
 		"function": "TestLoggerError",
 	}).SetWriter(file)
 
@@ -359,8 +359,8 @@ func TestLoggerInfoWithSeveralContextEntries(t *testing.T) {
 
 	log := New().With(Fields{
 		"function": "TestLoggerInfo",
-		"key":"value",
-		"package": "logger",
+		"key":      "value",
+		"package":  "logger",
 	}).SetWriter(file)
 
 	log.Info("info message")
@@ -376,8 +376,8 @@ func TestLoggerErrorWithSeveralContextEntries(t *testing.T) {
 
 	log := New().With(Fields{
 		"function": "TestLoggerError",
-		"key":"value",
-		"package": "logger",
+		"key":      "value",
+		"package":  "logger",
 	}).SetWriter(file)
 
 	log.Error("error message")
