@@ -106,13 +106,19 @@ func initConfig(lvl severity, svc, ver string) {
 
 // New instantiates and returns a Log object
 func New() *Log {
-	return &Log{
-		payload: &Payload{
+	// Set the ServiceContext only within a GCP context
+	p := &Payload{}
+	if service != "" && version != "" {
+		p = &Payload{
 			ServiceContext: &ServiceContext{
 				Service: service,
 				Version: version,
 			},
-		},
+		}
+	}
+
+	return &Log{
+		payload: p,
 		writer: os.Stdout,
 	}
 }
