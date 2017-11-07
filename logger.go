@@ -43,8 +43,6 @@ var logLevelValue = map[string]severity{
 // Fields is used to wrap the log entries payload
 type Fields map[string]interface{}
 
-type data map[string]string
-
 // ServiceContext is required by the Stackdriver Error format
 type ServiceContext struct {
 	Service string `json:"service,omitempty"`
@@ -60,7 +58,7 @@ type ReportLocation struct {
 
 // Context is required by the Stackdriver Error format
 type Context struct {
-	Data           data            `json:"data,omitempty"`
+	Data           Fields          `json:"data,omitempty"`
 	ReportLocation *ReportLocation `json:"reportLocation,omitempty"`
 }
 
@@ -160,15 +158,11 @@ func isValidLogLevel(s severity) bool {
 
 // With is used as a chained method to specify which values go in the log entry's context
 func (l *Log) With(fields Fields) *Log {
-	d := make(data)
-	for k, v := range fields {
-		d[k] = fmt.Sprint(v)
-	}
 	return &Log{
 		payload: &Payload{
 			ServiceContext: l.payload.ServiceContext,
 			Context: &Context{
-				Data: d,
+				Data: fields,
 			},
 			Stacktrace: "",
 		},
@@ -260,7 +254,7 @@ func (l Log) error(severity, message string) {
 	// Set the data when the context is empty
 	if l.payload.Context == nil {
 		l.payload.Context = &Context{
-			Data: data{},
+			Data: Fields{},
 		}
 	}
 
