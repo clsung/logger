@@ -41,7 +41,7 @@ var logLevelValue = map[string]severity{
 }
 
 // Fields is used to wrap the log entries payload
-type Fields map[string]string
+type Fields map[string]interface{}
 
 // ServiceContext is required by the Stackdriver Error format
 type ServiceContext struct {
@@ -157,8 +157,8 @@ func isValidLogLevel(s severity) bool {
 }
 
 // With is used as a chained method to specify which values go in the log entry's context
-func (l Log) With(fields Fields) Log {
-	return Log{
+func (l *Log) With(fields Fields) *Log {
+	return &Log{
 		payload: &Payload{
 			ServiceContext: l.payload.ServiceContext,
 			Context: &Context{
