@@ -81,3 +81,7 @@ The errors require a specific JSON format for them to be ingested and processed 
          "stacktrace": "goroutine 1 [running]:main.main()\n\t\/github.com\/macuenca\/mauricio.go:15 +0x1a9\n"
        }
 ```
+
+## License
+
+This package is licensed under the [BSD 3-clause](https://opensource.org/licenses/BSD-3-Clause) license.
