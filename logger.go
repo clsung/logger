@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
-	"path/filepath"
 )
 
 type severity int
@@ -157,13 +157,38 @@ func isValidLogLevel(s severity) bool {
 	return s >= logLevel
 }
 
+// fields returns a valid Fields whether or not one exists in the *Log.
+func (l *Log) fields() Fields {
+	f := make(Fields)
+	if l.payload == nil {
+		return f
+	}
+	if l.payload.Context == nil {
+		return f
+	}
+
+	if l.payload.Context.Data == nil {
+		return f
+	}
+
+	for k, v := range l.payload.Context.Data {
+		f[k] = v
+	}
+	return f
+}
+
 // With is used as a chained method to specify which values go in the log entry's context
 func (l *Log) With(fields Fields) *Log {
+	f := l.fields()
+	for k, v := range fields {
+		f[k] = v
+	}
+
 	return &Log{
 		payload: &Payload{
 			ServiceContext: l.payload.ServiceContext,
 			Context: &Context{
-				Data: fields,
+				Data: f,
 			},
 			Stacktrace: "",
 		},
