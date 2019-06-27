@@ -225,6 +225,11 @@ func (l Log) Infof(message string, args ...interface{}) {
 	l.Info(fmt.Sprintf(message, args...))
 }
 
+// Printf prints out a message with INFO severity level
+func (l Log) Printf(message string, args ...interface{}) {
+	l.Info(fmt.Sprintf(message, args...))
+}
+
 // Warn prints out a message with WARN severity level
 func (l Log) Warn(message string) {
 	if !isValidLogLevel(WARN) {
